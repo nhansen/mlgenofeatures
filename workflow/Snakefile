@@ -29,7 +29,7 @@ rule run_art:
         mkfifo simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.fq
         gzip -c < simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.fq > simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.fq.gz &
         gzip -c < simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.fq > simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.fq.gz &
-        art_illumina -ss HS25 -f {params.cov} -l {params.rl} -m {params.il} -s {params.ilsig} -i {input} -na -o simreads/{wildcards.samplegenotype}.{wildcards.iteration}. 2> {log}
+        art_illumina -ss HS25 -f {params.cov} -l {params.rl} -m {params.il} -s {params.ilsig} -i {input} -na -d {wildcards.samplegenotype}.{wildcards.iteration}. -o simreads/{wildcards.samplegenotype}.{wildcards.iteration}. 2> {log}
         rm simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.fq
         rm simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.fq
         meryl-lookup -include -sequence simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.fq.gz simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.fq.gz -mers /cluster/ifs/projects/AlphaThal/meryldbs/targetregion_allthreerefs_max500inchm13v2 -output simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.filtered.fq.gz simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.filtered.fq.gz 2>> {log}
