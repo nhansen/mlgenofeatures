@@ -4,8 +4,10 @@ rule create_genome:
     input:
     output:
         "genomes/{samplegenotype,[A-Za-z0-9_]+}.fasta"
+    log:
+        "logs/create_genome/{samplegenotype}.log"
     script:
-        "scripts/create_genome.py"
+        "scripts/create_genome.py 2> {log}"
 rule run_art:
     input:
         "genomes/{samplegenotype}.fasta"
@@ -17,6 +19,8 @@ rule run_art:
         il=config["insertlength"],
         ilsig=config["insertstddev"],
         cov=config["coverage"]
+    log:
+        "logs/simreads/{samplegenotype}.{iteration}.log"
     shell:
         """
         rm -f simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.fq
@@ -25,10 +29,10 @@ rule run_art:
         mkfifo simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.fq
         gzip -c < simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.fq > simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.fq.gz &
         gzip -c < simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.fq > simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.fq.gz &
-        art_illumina -ss HS25 -f {params.cov} -l {params.rl} -m {params.il} -s {params.ilsig} -i {input} -na -o simreads/{wildcards.samplegenotype}.{wildcards.iteration}.
+        art_illumina -ss HS25 -f {params.cov} -l {params.rl} -m {params.il} -s {params.ilsig} -i {input} -na -o simreads/{wildcards.samplegenotype}.{wildcards.iteration}. 2> {log}
         rm simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.fq
         rm simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.fq
-        meryl-lookup -include -sequence simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.fq.gz simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.fq.gz -mers /cluster/ifs/projects/AlphaThal/meryldbs/targetregion_allthreerefs_max500inchm13v2 -output simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.filtered.fq.gz simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.filtered.fq.gz
+        meryl-lookup -include -sequence simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.fq.gz simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.fq.gz -mers /cluster/ifs/projects/AlphaThal/meryldbs/targetregion_allthreerefs_max500inchm13v2 -output simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.filtered.fq.gz simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.filtered.fq.gz 2>> {log}
         """
 rule bwa_map:
     input:
@@ -38,9 +42,9 @@ rule bwa_map:
     output:
         "mapped_reads/{samplegenotype,[A-Za-z0-9_]+}.{iteration,[0-9]+}.sort.bam"
     params:
-        rg=r"@RG\tID:{samplegenotype,[A-Za-z0-9_]+}\tSM:{samplegenotype}.{iteration,[0-9]+}"
+        rg=r"@RG\tID:{samplegenotype,[A-Za-z0-9_]+}\tSM:{samplegenotype}.{iteration}"
     log:
-        "logs/bwa_mem/{samplegenotype,[A-Za-z0-9_]+}.{iteration,[0-9]+}.log"
+        "logs/bwa_map/{samplegenotype}.{iteration}.log"
     shell:
         "(bwa mem -M -R '{params.rg}' {input} | "
         "samtools view -Sb | samtools sort -m 8000000000 - -o {output}) 2> {log}"
@@ -49,14 +53,18 @@ rule samtools_index:
         "mapped_reads/{bambase}.sort.bam"
     output:
         "mapped_reads/{bambase}.sort.bam.bai"
+    log:
+        "logs/samtools_index/{bambase}.log"
     shell:
-        "samtools index {input}"
+        "samtools index {input} 2> {log}"
 rule bam_slice:
     input:
         "mapped_reads/{samplegenotype}.{iteration}.sort.bam",
         "mapped_reads/{samplegenotype}.{iteration}.sort.bam.bai"
     output:
-        "mapped_reads/{samplegenotype,[A-Za-z0-9]+}.alphathal.sort.bam",
+        "mapped_reads/{samplegenotype,[A-Za-z0-9_]+}.{iteration,[0-9]+}.alphathal.sort.bam"
+    log:
+        "logs/bam_slice/{samplegenotype}.{iteration}.log"
     shell:
-        "samtools view -b mapped_reads/{wildcards.samplegenotype}.{iteration,[0-9]+}.sort.bam chr16:100001-600000 | samtools view -b > mapped_reads/{wildcards.samplegenotype}.{iteration,[0-9]+}.alphathal.sort.bam"
+        "samtools view -b mapped_reads/{wildcards.samplegenotype}.{wildcards.iteration}.sort.bam chr16:100001-600000 | samtools view -b > mapped_reads/{wildcards.samplegenotype}.{wildcards.iteration}.alphathal.sort.bam 2> {log}"
 
