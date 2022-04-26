@@ -1,0 +1,16 @@
+h1. Snakemake pipeline for simulating reads from genomes with structural variation
+
+p. SimSVs was written by Nancy Fisher Hansen, a staff scientist in the Cancer
+Genetics and Comparative Genomics Branch (CGCG) of NHGRI, an institute at the 
+National Institutes of Health.  Nancy can be reached at nhansen@mail.nih.gov.
+
+h2. Software dependencies
+
+SimSVs uses ART (https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm), meryl (https://github.com/marbl/meryl), bwa (https://github.com/lh3/bwa), and samtools (http://www.htslib.org) to perform its simulation and alignment.
+
+h3. Clone the repository
+
+bc. git clone git://github.com/nhansen/SimSVs.git
+
+
+

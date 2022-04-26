@@ -1,0 +1,59 @@
+configfile: "config.yaml"
+
+rule create_genome:
+    input:
+    output:
+        "genomes/{samplegenotype}.fasta"
+    script:
+        "scripts/create_genome.py"
+rule run_art:
+    input:
+        "genomes/{samplegenotype}.fasta"
+    output:
+        "simreads/{samplegenotype}1.filtered.fq.gz",
+        "simreads/{samplegenotype}2.filtered.fq.gz"
+    params:
+        rl=config["readlength"],
+        il=config["insertlength"],
+        ilsig=config["insertstddev"],
+        cov=config["coverage"]
+    shell:
+        """
+        mkfifo simreads/{wildcards.samplegenotype}1.fq
+        mkfifo simreads/{wildcards.samplegenotype}2.fq
+        gzip -c < simreads/{wildcards.samplegenotype}1.fq > simreads/{wildcards.samplegenotype}1.fq.gz &
+        gzip -c < simreads/{wildcards.samplegenotype}2.fq > simreads/{wildcards.samplegenotype}2.fq.gz &
+        art_illumina -ss HS25 -f {params.cov} -l {params.rl} -m {params.il} -s {params.ilsig} -i {input} -na -o simreads/{wildcards.samplegenotype}
+        rm simreads/{wildcards.samplegenotype}1.fq
+        rm simreads/{wildcards.samplegenotype}2.fq
+        meryl-lookup -include -sequence simreads/{wildcards.samplegenotype}1.fq.gz simreads/{wildcards.samplegenotype}2.fq.gz -mers /cluster/ifs/projects/AlphaThal/meryldbs/targetregion_allthreerefs_max500inchm13v2 -output simreads/{wildcards.samplegenotype}1.filtered.fq.gz simreads/{wildcards.samplegenotype}2.filtered.fq.gz
+        """
+rule bwa_map:
+    input:
+        config["reffasta"],
+        "simreads/{samplegenotype,[A-Za-z0-9]+}1.filtered.fq.gz",
+        "simreads/{samplegenotype,[A-Za-z0-9]+}2.filtered.fq.gz"
+    output:
+        "mapped_reads/{samplegenotype,[A-Za-z0-9]+}.sort.bam"
+    params:
+        rg=r"@RG\tID:{samplegenotype,[A-Za-z0-9]+}\tSM:{samplegenotype}"
+    log:
+        "logs/bwa_mem/{samplegenotype,[A-Za-z0-9]+}.log"
+    shell:
+        "(bwa mem -M -R '{params.rg}' {input} | "
+        "samtools view -Sb | samtools sort -m 8000000000 - -o {output}) 2> {log}"
+rule samtools_index:
+    input:
+        "mapped_reads/{bambase}.sort.bam"
+    output:
+        "mapped_reads/{bambase}.sort.bam.bai"
+    shell:
+        "samtools index {input}"
+rule bam_slice:
+    input:
+        "mapped_reads/{samplegenotype,[A-Za-z0-9]+}.sort.bam",
+        "mapped_reads/{samplegenotype,[A-Za-z0-9]+}.sort.bam.bai"
+    output:
+        "mapped_reads/{samplegenotype,[A-Za-z0-9]+}.alphathal.sort.bam",
+    shell:
+        "samtools view -b mapped_reads/{wildcards.samplegenotype}.sort.bam chr16:100001-600000 | samtools view -b > mapped_reads/{wildcards.samplegenotype}.alphathal.sort.bam"

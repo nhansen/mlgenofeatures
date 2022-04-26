@@ -1,0 +1,5 @@
+reference: /data/projects/solexa/reference/fasta/hg19/hg19.mfa
+readlength: 150
+insertlength: 400
+insertstddev: 20
+coverage: 0.1
