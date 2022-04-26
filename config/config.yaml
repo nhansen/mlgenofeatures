@@ -1,5 +1,9 @@
-reference: /data/projects/solexa/reference/fasta/hg19/hg19.mfa
+reffasta: /cluster/ifs/projects/AlphaThal/References/chm13v2.0.fasta
 readlength: 150
 insertlength: 400
 insertstddev: 20
-coverage: 0.1
+coverage: 5.0 
+genomedir: /cluster/ifs/projects/AlphaThal/haplotype_assemblies
+genomefiles:
+    1M: HG01109.maternal.f1_assembly_v2.fa.gz
+    1P: HG01109.paternal.f1_assembly_v2.fa.gz
