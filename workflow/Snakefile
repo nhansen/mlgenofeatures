@@ -1,5 +1,9 @@
 configfile: "config/config.yaml"
 
+def gather_component_fqs(wildcards):
+    return expand(
+        "simreads/"+wildcards.samplegenotype+"."+wildcards.iteration+".{subset}."+wildcards.readnum+".filtered.fq.gz", subset=range(1,int(workflow.cores/2.0) + 1) )
+
 rule create_genome:
     input:
     output:
@@ -7,33 +11,34 @@ rule create_genome:
     log:
         "logs/create_genome/{samplegenotype}.log"
     script:
-        "scripts/create_genome.py 2> {log}"
+        "scripts/create_genome.py"
 rule run_art:
     input:
         "genomes/{samplegenotype}.fasta"
     output:
-        temporary("simreads/{samplegenotype,[A-Za-z0-9_]+}.{iteration,[0-9]+}.1.filtered.fq.gz"),
-        temporary("simreads/{samplegenotype,[A-Za-z0-9_]+}.{iteration,[0-9]+}.2.filtered.fq.gz")
+        temporary("simreads/{samplegenotype,[A-Za-z0-9_]+}.{iteration,[0-9]+}.{subset,[0-9]+}.1.filtered.fq.gz"),
+        temporary("simreads/{samplegenotype,[A-Za-z0-9_]+}.{iteration,[0-9]+}.{subset,[0-9]+}.2.filtered.fq.gz")
     params:
         rl=config["readlength"],
         il=config["insertlength"],
         ilsig=config["insertstddev"],
-        cov=config["coverage"]
+        cov="{:.2f}".format(float(2*config["coverage"])/int(workflow.cores))
+    threads: 2
     log:
-        "logs/simreads/{samplegenotype}.{iteration}.log"
+        "logs/simreads/{samplegenotype}.{iteration}.{subset}.log"
     shell:
         """
-        rm -f simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.fq
-        rm -f simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.fq
-        mkfifo simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.fq
-        mkfifo simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.fq
-        gzip -c < simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.fq > simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.fq.gz &
-        gzip -c < simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.fq > simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.fq.gz &
-        art_illumina -ss HS25 -f {params.cov} -l {params.rl} -m {params.il} -s {params.ilsig} -i {input} -na -d {wildcards.samplegenotype}.{wildcards.iteration}. -o simreads/{wildcards.samplegenotype}.{wildcards.iteration}. 2> {log}
-        rm simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.fq simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.fq
-        meryl-lookup -include -sequence simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.fq.gz simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.fq.gz -mers /cluster/ifs/projects/AlphaThal/meryldbs/targetregion_allthreerefs_max500inchm13v2 -output simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.filtered.fq.gz simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.filtered.fq.gz 2>> {log}
-        rm simreads/{wildcards.samplegenotype}.{wildcards.iteration}.1.fq.gz simreads/{wildcards.samplegenotype}.{wildcards.iteration}.2.fq.gz
+        art_illumina -ss HS25 -f {params.cov} -l {params.rl} -m {params.il} -s {params.ilsig} -i {input} -na -d {wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}. -o simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}. 2> {log}
+        meryl-lookup -include -threads 1 -sequence simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.1.fq simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.2.fq -mers /cluster/ifs/projects/AlphaThal/meryldbs/targetregion_allthreerefs_max500inchm13v2 -output simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.1.filtered.fq.gz simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.2.filtered.fq.gz 2>> {log}
+        rm simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.1.fq simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.2.fq
         """
+rule consolidate_fqs:
+    input:
+        gather_component_fqs
+    output:
+        temporary("simreads/{samplegenotype,[A-Za-z0-9_]+}.{iteration,[0-9]+}.{readnum,[12]}.filtered.fq.gz")
+    shell:
+        "gunzip -c {input} | gzip -c > {output}"
 rule bwa_map:
     input:
         config["reffasta"],
@@ -45,8 +50,9 @@ rule bwa_map:
         rg=r"@RG\tID:{samplegenotype,[A-Za-z0-9_]+}\tSM:{samplegenotype}.{iteration}"
     log:
         "logs/bwa_map/{samplegenotype}.{iteration}.log"
+    threads: workflow.cores - 2
     shell:
-        "(bwa mem -M -R '{params.rg}' {input} | "
+        "(bwa mem -t {threads} -M -R '{params.rg}' {input} | "
         "samtools view -Sb | samtools sort -m 8000000000 - -o {output}) 2> {log}"
 rule samtools_index:
     input:
@@ -67,4 +73,3 @@ rule bam_slice:
         "logs/bam_slice/{samplegenotype}.{iteration}.log"
     shell:
         "samtools view -b mapped_reads/{wildcards.samplegenotype}.{wildcards.iteration}.sort.bam chr16:100001-600000 | samtools view -b > mapped_reads/{wildcards.samplegenotype}.{wildcards.iteration}.alphathal.sort.bam 2> {log}"
-
