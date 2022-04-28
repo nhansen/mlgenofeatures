@@ -1,0 +1,10 @@
+#!/bin/bash
+#$ -l mem_free=2g,h_vmem=16g
+#$ -e logs/
+#$ -o logs/
+#$ -pe make-dedicated 8
+
+export SAMPLEGENOTYPE=$1
+
+./sh.make_sim mapped_reads/$SAMPLEGENOTYPE.$SGE_TASK_ID.alphathal.sort.bam.bai
+
