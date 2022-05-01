@@ -1,5 +1,4 @@
 #!/bin/bash
-#$ -l mem_free=16g,h_vmem=16g
 #$ -e logs/
 #$ -o logs/
 
@@ -13,4 +12,4 @@ export PATH=/home/nhansen/projects/ART/art_bin_MountRainier:/home/nhansen/projec
 
 export TARGET=$1
 
-snakemake --nolock --cores=1 $TARGET
+snakemake --nolock --cores=8 $TARGET
