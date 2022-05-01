@@ -7,3 +7,31 @@ genomedir: /cluster/ifs/projects/AlphaThal/haplotype_assemblies
 genomefiles:
     1M: HG01109.maternal.f1_assembly_v2.fa.gz
     1P: HG01109.paternal.f1_assembly_v2.fa.gz
+    2M: HG01243.maternal.f1_assembly_v2.fa.gz
+    2P: HG01243.paternal.f1_assembly_v2.fa.gz
+    3M: HG02055.maternal.f1_assembly_v2.fa.gz
+    3P: HG02055.paternal.f1_assembly_v2.fa.gz
+    4M: HG02145.maternal.f1_assembly_v2.fa.gz
+    4P: HG02145.paternal.f1_assembly_v2.fa.gz
+    5M: HG02723.maternal.f1_assembly_v2.fa.gz
+    5P: HG02723.paternal.f1_assembly_v2.fa.gz
+    6M: HG03098.maternal.f1_assembly_v2.fa.gz
+    6P: HG03098.paternal.f1_assembly_v2.fa.gz
+    7M: HG03492.maternal.f1_assembly_v2.fa.gz
+    7P: HG03492.paternal.f1_assembly_v2.fa.gz
+mutationdir: /cluster/ifs/projects/AlphaThal/HPGP/MutationLocations
+mutationfiles:
+    1M: HG01109.maternal.f1_assembly_v2.AlphaThal.mutations.bed
+    1P: HG01109.paternal.f1_assembly_v2.AlphaThal.mutations.bed
+    2M: HG01243.maternal.f1_assembly_v2.AlphaThal.mutations.bed
+    2P: HG01243.paternal.f1_assembly_v2.AlphaThal.mutations.bed
+    3M: HG02055.maternal.f1_assembly_v2.AlphaThal.mutations.bed
+    3P: HG02055.paternal.f1_assembly_v2.AlphaThal.mutations.bed
+    4M: HG02145.maternal.f1_assembly_v2.AlphaThal.mutations.bed
+    4P: HG02145.paternal.f1_assembly_v2.AlphaThal.mutations.bed
+    5M: HG02723.maternal.f1_assembly_v2.AlphaThal.mutations.bed
+    5P: HG02723.paternal.f1_assembly_v2.AlphaThal.mutations.bed
+    6M: HG03098.maternal.f1_assembly_v2.AlphaThal.mutations.bed
+    6P: HG03098.paternal.f1_assembly_v2.AlphaThal.mutations.bed
+    7M: HG03492.maternal.f1_assembly_v2.AlphaThal.mutations.bed
+    7P: HG03492.paternal.f1_assembly_v2.AlphaThal.mutations.bed
