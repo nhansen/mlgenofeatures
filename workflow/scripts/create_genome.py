@@ -74,8 +74,13 @@ if match:
                         if mutation == "deletion":
                             oneseq = currentseq.replace("\n", "")
                             print("Length of entry" + mutentry + ":" + str(len(oneseq)))
-                            print("0 to " + str(mutstart) + ", " + str(len(oneseq)))
                             currentseq = oneseq[0:mutstart] + oneseq[mutend:len(oneseq)]
+                            print("Length of mutated entry" + mutentry + ":" + str(len(currentseq)))
+                        if mutation == "duplication":
+                            oneseq = currentseq.replace("\n", "")
+                            print("Length of entry" + mutentry + ":" + str(len(oneseq)))
+                            currentseq = oneseq[0:mutend] + oneseq[mutstart:mutend] + oneseq[mutend:len(oneseq)]
+                            print("Length of mutated entry" + mutentry + ":" + str(len(currentseq)))
                         print(">" + currentseqid, file=outgenome)
                         print60(currentseq, outgenome)
                     else:
