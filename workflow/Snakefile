@@ -22,14 +22,17 @@ rule run_art:
         rl=config["readlength"],
         il=config["insertlength"],
         ilsig=config["insertstddev"],
-        cov="{:.2f}".format(float(2*config["coverage"])/int(workflow.cores))
+        cov="{:.2f}".format(float(2*config["coverage"])/int(workflow.cores)),
+        filter=config["filterfile"]
     threads: 2
     log:
         "logs/simreads/{samplegenotype}.{iteration}.{subset}.log"
     shell:
         """
-        art_illumina -ss HS25 -f {params.cov} -l {params.rl} -m {params.il} -s {params.ilsig} -i {input} -na -d {wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}. -o simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}. 2> {log}
-        meryl-lookup -include -threads 1 -sequence simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.1.fq simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.2.fq -mers /cluster/ifs/projects/AlphaThal/meryldbs/targetregion_allthreerefs_max500inchm13v2 -output simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.1.filtered.fq.gz simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.2.filtered.fq.gz 2>> {log}
+        # sleep different amount of time for each subset so we don't get duplicate sets of reads due to having same (time dependent) seed:
+        for i in $(seq {wildcards.subset}); do sleep 10; done
+        art_illumina -ss HS25 -f {params.cov} -l {params.rl} -m {params.il} -s {params.ilsig} -i {input} -na -d {wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}. -o simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}. > {log} 2>&1 
+        meryl-lookup -include -threads 1 -sequence simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.1.fq simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.2.fq -mers {params.filter} -output simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.1.filtered.fq.gz simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.2.filtered.fq.gz >>{log} 2>&1
         rm simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.1.fq simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.2.fq
         """
 rule consolidate_fqs:
@@ -41,18 +44,18 @@ rule consolidate_fqs:
         "gunzip -c {input} | gzip -c > {output}"
 rule bwa_map:
     input:
-        config["reffasta"],
         "simreads/{samplegenotype}.{iteration}.1.filtered.fq.gz",
         "simreads/{samplegenotype}.{iteration}.2.filtered.fq.gz"
     output:
-        temporary("mapped_reads/{samplegenotype,[A-Za-z0-9_]+}.{iteration,[0-9]+}.sort.bam")
+        temporary("mapped_reads/{samplegenotype,[A-Za-z0-9_]+}.{refname,[A-Za-z0-9]+}.{iteration,[0-9]+}.sort.bam")
     params:
-        rg=r"@RG\tID:{samplegenotype,[A-Za-z0-9_]+}\tSM:{samplegenotype}.{iteration}"
+        rg=r"@RG\tID:{samplegenotype,[A-Za-z0-9_]+}\tSM:{samplegenotype}.{iteration}",
+        ref=lambda wildcards: config["reffasta"][wildcards.refname]
     log:
-        "logs/bwa_map/{samplegenotype}.{iteration}.log"
+        "logs/bwa_map/{samplegenotype}.{refname}.{iteration}.log"
     threads: workflow.cores - 2
     shell:
-        "(bwa mem -t {threads} -M -R '{params.rg}' {input} | "
+        "(bwa mem -t {threads} -M -R '{params.rg}' {params.ref} {input} | "
         "samtools view -Sb | samtools sort -m 8000000000 - -o {output}) 2> {log}"
 rule samtools_index:
     input:
@@ -65,11 +68,11 @@ rule samtools_index:
         "samtools index {input} 2> {log}"
 rule bam_slice:
     input:
-        "mapped_reads/{samplegenotype}.{iteration}.sort.bam",
-        "mapped_reads/{samplegenotype}.{iteration}.sort.bam.bai"
+        "mapped_reads/{samplegenotype}.{refname}.{iteration}.sort.bam",
+        "mapped_reads/{samplegenotype}.{refname}.{iteration}.sort.bam.bai"
     output:
-        "mapped_reads/{samplegenotype,[A-Za-z0-9_]+}.{iteration,[0-9]+}.alphathal.sort.bam"
+        "mapped_reads/{samplegenotype,[A-Za-z0-9_]+}.{refname,[A-Za-z0-9]+}.{iteration,[0-9]+}.alphathal.sort.bam"
     log:
-        "logs/bam_slice/{samplegenotype}.{iteration}.log"
+        "logs/bam_slice/{samplegenotype}.{refname}.{iteration}.log"
     shell:
-        "samtools view -b mapped_reads/{wildcards.samplegenotype}.{wildcards.iteration}.sort.bam chr16:100001-600000 | samtools view -b > mapped_reads/{wildcards.samplegenotype}.{wildcards.iteration}.alphathal.sort.bam 2> {log}"
+        "samtools view -b mapped_reads/{wildcards.samplegenotype}.{wildcards.refname}.{wildcards.iteration}.sort.bam chr16:100001-600000 | samtools view -b > mapped_reads/{wildcards.samplegenotype}.{wildcards.refname}.{wildcards.iteration}.alphathal.sort.bam 2> {log}"
