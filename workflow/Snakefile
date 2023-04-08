@@ -1,9 +1,11 @@
 configfile: "config/config.yaml"
 
-def gather_component_fqs(wildcards):
-    return expand(
-        "simreads/"+wildcards.samplegenotype+"."+wildcards.iteration+".{subset}."+wildcards.readnum+".filtered.fq.gz", subset=range(1,int(workflow.cores/2.0) + 1) )
+def component_geno_featurefiles(wildcards):
+    alleles = wildcards.genotype.split("_")
+    numiters = config["iterations"] + 1
+    return expand("features/{maternal}_"+alleles[0]+"_{paternal}_"+alleles[1]+".{coverage}x.{iteration}.features.txt", maternal=config["maternalhaps"], paternal=config["paternalhaps"], coverage=config["coveragevals"], iteration=range(1,numiters))
 
+# create a fasta file with two haplotypes and deletion alleles specified in the file's name
 rule create_genome:
     input:
     output:
@@ -12,67 +14,77 @@ rule create_genome:
         "logs/create_genome/{samplegenotype}.log"
     script:
         "scripts/create_genome.py"
-rule run_art:
+
+# simulate reads with readlength, insertlength, and insertstddev specified in the config file, and
+# reference genome file and coverage specified in the file name
+rule run_art_for_kmers:
     input:
         "genomes/{samplegenotype}.fasta"
     output:
-        temporary("simreads/{samplegenotype,[A-Za-z0-9_]+}.{iteration,[0-9]+}.{subset,[0-9]+}.1.filtered.fq.gz"),
-        temporary("simreads/{samplegenotype,[A-Za-z0-9_]+}.{iteration,[0-9]+}.{subset,[0-9]+}.2.filtered.fq.gz")
+        temporary("simreads/{samplegenotype,[A-Za-z0-9_]+}.{coverage,[0-9]+}x.{iteration,[0-9]+}.1.fq"),
+        temporary("simreads/{samplegenotype,[A-Za-z0-9_]+}.{coverage,[0-9]+}x.{iteration,[0-9]+}.2.fq")
     params:
         rl=config["readlength"],
         il=config["insertlength"],
         ilsig=config["insertstddev"],
-        cov="{:.2f}".format(float(2*config["coverage"])/int(workflow.cores)),
-        filter=config["filterfile"]
     threads: 2
     log:
-        "logs/simreads/{samplegenotype}.{iteration}.{subset}.log"
+        "logs/simreads/{samplegenotype}.{coverage,[0-9]+}x.{iteration}.log"
     shell:
         """
-        # sleep different amount of time for each subset so we don't get duplicate sets of reads due to having same (time dependent) seed:
-        for i in $(seq {wildcards.subset}); do sleep 10; done
-        art_illumina -ss HS25 -f {params.cov} -l {params.rl} -m {params.il} -s {params.ilsig} -i {input} -na -d {wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}. -o simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}. > {log} 2>&1 
-        meryl-lookup -include -threads 1 -sequence simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.1.fq simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.2.fq -mers {params.filter} -output simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.1.filtered.fq.gz simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.2.filtered.fq.gz >>{log} 2>&1
-        rm simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.1.fq simreads/{wildcards.samplegenotype}.{wildcards.iteration}.{wildcards.subset}.2.fq
+        for i in $(seq {wildcards.iteration}); do sleep 1; done
+        art_illumina -ss HS25 -f {wildcards.coverage} -l {params.rl} -m {params.il} -s {params.ilsig} -i {input} -na -d {wildcards.samplegenotype}.{wildcards.coverage}x.{wildcards.iteration}. -o simreads/{wildcards.samplegenotype}.{wildcards.coverage}x.{wildcards.iteration}. > {log} 2>&1 
         """
-rule consolidate_fqs:
+
+# calculate k-mer counts from the simulated reads
+rule calculate_kmer_features:
     input:
-        gather_component_fqs
+        "simreads/{samplegenotype}.{coverage}x.{iteration}.1.fq",
+        "simreads/{samplegenotype}.{coverage}x.{iteration}.2.fq"
     output:
-        temporary("simreads/{samplegenotype,[A-Za-z0-9_]+}.{iteration,[0-9]+}.{readnum,[12]}.filtered.fq.gz")
-    shell:
-        "gunzip -c {input} | gzip -c > {output}"
-rule bwa_map:
-    input:
-        "simreads/{samplegenotype}.{iteration}.1.filtered.fq.gz",
-        "simreads/{samplegenotype}.{iteration}.2.filtered.fq.gz"
-    output:
-        temporary("mapped_reads/{samplegenotype,[A-Za-z0-9_]+}.{refname,[A-Za-z0-9]+}.{iteration,[0-9]+}.sort.bam")
+        temporary("features/{samplegenotype,[A-Za-z0-9_]+}.{coverage,[0-9]+}x.{iteration,[0-9]+}.kmercounts.txt")
     params:
-        rg=r"@RG\tID:{samplegenotype,[A-Za-z0-9_]+}\tSM:{samplegenotype}.{iteration}",
-        ref=lambda wildcards: config["reffasta"][wildcards.refname]
+        kmerdb=config["targetkmers"],
+    threads: 2
     log:
-        "logs/bwa_map/{samplegenotype}.{refname}.{iteration}.log"
-    threads: workflow.cores - 2
+        "logs/features/kmercounts.{samplegenotype}.{coverage,[0-9]+}x.{iteration}.log"
     shell:
-        "(bwa mem -t {threads} -M -R '{params.rg}' {params.ref} {input} | "
-        "samtools view -Sb | samtools sort -m 8000000000 - -o {output}) 2> {log}"
-rule samtools_index:
+        """
+        meryl intersect [union-sum output features/{wildcards.samplegenotype}.{wildcards.coverage}x.{wildcards.iteration} [count simreads/{wildcards.samplegenotype}.{wildcards.coverage}x.{wildcards.iteration}.1.fq output features/{wildcards.samplegenotype}.{wildcards.coverage}x.{wildcards.iteration}.1] [count simreads/{wildcards.samplegenotype}.{wildcards.coverage}x.{wildcards.iteration}.2.fq output features/{wildcards.samplegenotype}.{wildcards.coverage}x.{wildcards.iteration}.2]] {params.kmerdb} output features/{wildcards.samplegenotype}.{wildcards.coverage}x.{wildcards.iteration}.targetkmercounts >>{log} 2>&1
+        meryl print features/{wildcards.samplegenotype}.{wildcards.coverage}x.{wildcards.iteration}.targetkmercounts>{output} 2>>{log}
+        rm -rf features/{wildcards.samplegenotype}.{wildcards.coverage}x.{wildcards.iteration}.targetkmercounts features/{wildcards.samplegenotype}.{wildcards.coverage}x.{wildcards.iteration}.1 features/{wildcards.samplegenotype}.{wildcards.coverage}x.{wildcards.iteration}.2 features/{wildcards.samplegenotype}.{wildcards.coverage}x.{wildcards.iteration}
+        """
+
+rule create_allkmer_file:
     input:
-        "mapped_reads/{bambase}.sort.bam"
     output:
-        "mapped_reads/{bambase}.sort.bam.bai"
+        "features/all_feature_kmers.txt"
+    params:
+        kmerdb=config["targetkmers"],
+        prunefactor=config["prunefactor"],
     log:
-        "logs/samtools_index/{bambase}.log"
+        "logs/features/allkmercounts.log"
     shell:
-        "samtools index {input} 2> {log}"
-rule bam_slice:
+        "meryl print {params.kmerdb} | awk 'NR==30*int(NR/30) {{print}}' > {output} 2>>{log}"
+
+rule create_kmer_featurefile:
     input:
-        "mapped_reads/{samplegenotype}.{refname}.{iteration}.sort.bam",
-        "mapped_reads/{samplegenotype}.{refname}.{iteration}.sort.bam.bai"
+        "features/{samplegenotype}.{coverage}x.{iteration}.kmercounts.txt",
+        "features/all_feature_kmers.txt"
     output:
-        "mapped_reads/{samplegenotype,[A-Za-z0-9_]+}.{refname,[A-Za-z0-9]+}.{iteration,[0-9]+}.alphathal.sort.bam"
+        temporary("features/{samplegenotype,[A-Za-z0-9_]+}.{coverage,[0-9]+}x.{iteration,[0-9]+}.features.txt")
     log:
-        "logs/bam_slice/{samplegenotype}.{refname}.{iteration}.log"
+        "logs/features/featurefile.{samplegenotype}.{coverage,[0-9]+}x.{iteration}.log"
+    script:
+        "scripts/create_featurefile.py"
+
+rule create_genotype_featurefile:
+    input:
+        component_geno_featurefiles
+    output:
+        "features/combined_feature_file.{genotype,[A-Z0-9_]+}.txt"
+    log:
+        "logs/features/combine_featurefiles.{genotype}.log"
     shell:
-        "samtools view -b mapped_reads/{wildcards.samplegenotype}.{wildcards.refname}.{wildcards.iteration}.sort.bam chr16:100001-600000 | samtools view -b > mapped_reads/{wildcards.samplegenotype}.{wildcards.refname}.{wildcards.iteration}.alphathal.sort.bam 2> {log}"
+        "cat {input} > {output}"
+

@@ -1,14 +1,18 @@
-reffasta:
-    hg19: /cluster/ifs/projects/AlphaThal/References/hg19.fasta
-    grch38: /cluster/ifs/projects/AlphaThal/References/GRCh38.fa
-    chm13: /cluster/ifs/projects/AlphaThal/References/chm13v2.0.fasta
 readlength: 150
 insertlength: 440
 insertstddev: 100
-coverage: 5.0
-filterfile: /cluster/ifs/projects/AlphaThal/meryldbs/targetregion_allthreerefs_max500inhg19orGRCh38orchm13
+coveragevals:
+    - 10
+    - 20
+    - 30
+    - 40
+    - 50
+    - 60
+targetkmers: /cluster/ifs/projects/AlphaThal/meryldbs/kmerfeatureregion_allthreerefs_max30inhg19andGRCh38andchm13_k25
 fivepgenomeregionbuffer: 200000
 threepgenomeregionbuffer: 450000
+prunefactor: 30
+iterations: 20
 genomedir: /cluster/ifs/projects/AlphaThal/haplotype_assemblies
 genomefiles:
     1M: HG01109.maternal.f1_assembly_v2.fa.gz
@@ -41,3 +45,26 @@ mutationfiles:
     6P: HG03098.paternal.f1_assembly_v2.AlphaThal.mutations.bed
     7M: HG03492.maternal.f1_assembly_v2.AlphaThal.mutations.bed
     7P: HG03492.paternal.f1_assembly_v2.AlphaThal.mutations.bed
+genotypes:
+    - WTYP_WTYP
+    - WTYP_AL37
+    - WTYP_AL42
+    - AL37_AL37
+    - AL37_AL42
+    - AL42_AL42
+maternalhaps:
+    - 1M
+    - 2M
+    - 3M
+    - 4M
+    - 5M
+    - 6M
+    - 7M
+paternalhaps:
+    - 1P
+    - 2P
+    - 3P
+    - 4P
+    - 5P
+    - 6P
+    - 7P
