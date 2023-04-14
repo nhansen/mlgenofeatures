@@ -1,13 +1,6 @@
 #!/bin/bash
-#$ -e logs/
-#$ -o logs/
 #$ -l mem_free=6g,h_vmem=6g
 #$ -pe make-dedicated 16 
-
-#source /etc/profile.d/modules.sh
-
-#module load snakemake
-#module load SAMtools/1.11-GCC-9.3.0
 
 # activate the conda environment for this script:
 source /home/nhansen/mambaforge/etc/profile.d/conda.sh

@@ -78,13 +78,53 @@ rule create_kmer_featurefile:
     script:
         "scripts/create_featurefile.py"
 
-rule create_genotype_featurefile:
+rule create_headerless_genotype_featurefile:
     input:
         component_geno_featurefiles
     output:
-        "features/combined_feature_file.{genotype,[A-Z0-9_]+}.txt"
+        "features/combined_feature_file.{genotype,[A-Z0-9_]+}.noheader.txt"
     log:
         "logs/features/combine_featurefiles.{genotype}.log"
     shell:
         "cat {input} > {output}"
+
+rule create_genotype_featurefile:
+    input:
+        "features/combined_feature_file.{genotype}.noheader.txt",
+        "features/all_feature_kmers.txt"
+    output:
+        "features/combined_feature_file.{genotype,[A-Z0-9_]+}.txt"
+    log:
+        "logs/features/combine_featurefiles_with_header.{genotype}.log"
+    shell:
+        "(awk '{{print $1}}' features/all_feature_kmers.txt | tr \"\n\" \"\t\"; echo \"Genotype\"; cat features/combined_feature_file.{wildcards.genotype}.noheader.txt ) > {output}"
+
+# calculate k-mer counts from a test sample's reads
+rule calculate_testsample_features:
+    input:
+        "testsamples/{prefix}.fastq"
+    output:
+        temporary("testsamples/{prefix,[A-Za-z0-9_.-]+}.kmercounts.txt")
+    params:
+        kmerdb=config["targetkmers"],
+    threads: 2
+    log:
+        "logs/testsamples/kmercounts.{prefix}.log"
+    shell:
+        """
+        meryl intersect [count testsamples/{wildcards.prefix}.fastq output testsamples/{wildcards.prefix}] {params.kmerdb} output testsamples/{wildcards.prefix}.targetkmercounts >>{log} 2>&1
+        meryl print testsamples/{wildcards.prefix}.targetkmercounts>{output} 2>>{log}
+        rm -rf testsamples/{wildcards.prefix}.targetkmercounts testsamples/{wildcards.prefix}
+        """
+
+rule create_testsample_featurefile:
+    input:
+        "testsamples/{prefix}.kmercounts.txt",
+        "features/all_feature_kmers.txt"
+    output:
+        "testsamples/{prefix,[A-Za-z0-9_.-]+}.testsample.features.txt"
+    log:
+        "logs/testsamples/featurefile.{prefix}.log"
+    script:
+        "scripts/create_test_featurefile.py"
 

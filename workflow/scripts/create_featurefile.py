@@ -47,26 +47,34 @@ with open(snakemake.log[0], "w") as f:
 
         print("Successfully read in simulated kmer counts from file " + kmer_count_file)
            
+        # calculate total counts for this sample:
+        # append normalized kmer counts to a list for printing:
+        kmertotal = 0
+        numkmers = 0
         countlist = [] 
-        print("Opening " + all_kmer_file)
         with open(all_kmer_file, "r") as inallkmers_f:
             for line in inallkmers_f:
                 line = line.strip()
                 kmermatch = re.search(r'^(\S+)\s(\d+)$', line)
                 if kmermatch:
+                    numkmers = numkmers + 1
                     printkmer = kmermatch.group(1)
                     if kmercounts.get(printkmer) == None:
                         countlist.append("0")
-                        print("No count for kmer " + printkmer)
                     else:
                         countlist.append(str(kmercounts[printkmer]))
+                        kmertotal = kmertotal + int(kmercounts[printkmer])
                 else:
                     print("Can\'t find kmer in line:\n" + line)
 
-        countlist.append(genotypestring)
+        print("Normalizing")
+        normcountlist = []
+        for count in countlist:
+            normcountlist.append(str(round(50.0*int(count)*numkmers/kmertotal)))
+        normcountlist.append(genotypestring)
 
         with open(feature_file, "w") as outfeature_f:
-            featurestring = "\t".join(countlist)
+            featurestring = "\t".join(normcountlist)
             print(featurestring, file=outfeature_f)
     else:
         print("Couldn\'t parse filename " + feature_file)
