@@ -1,0 +1,10 @@
+#!/bin/bash
+
+export HEADERFILE=$1
+export FOF=$2
+export OUTPUT=$3
+
+awk 'NR==1 {print}' $HEADERFILE > $OUTPUT
+for file in `cat $FOF | sed 's/.fastq/.testsample.features.txt/'`; do
+    cat $file >> $OUTPUT
+done

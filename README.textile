@@ -1,16 +1,20 @@
-h1. Snakemake pipeline for simulating reads from genomes with structural variation
+h1. Simulating k-mer count features with SimSVs
 
-p. SimSVs was written by Nancy Fisher Hansen, a staff scientist in the Cancer
-Genetics and Comparative Genomics Branch (CGCG) of NHGRI, an institute at the 
-National Institutes of Health.  Nancy can be reached at nhansen@mail.nih.gov.
+p. SimSVs is a Snakemake pipeline that can be used to create files of
+k-mer counts from short reads simulated from a diverse set of
+mutated haplotype reference sequences.
+
+p. These k-mer counts can then be used to train random forest 
+classifiers to recognize the simulated mutations in real whole
+genome datasets.
 
 h2. Software dependencies
 
-SimSVs uses ART (https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm), meryl (https://github.com/marbl/meryl), bwa (https://github.com/lh3/bwa), and samtools (http://www.htslib.org) to perform its simulation and alignment.
+The SimSV pipeline requires:
 
-h3. Clone the repository
-
-bc. git clone git://github.com/nhansen/SimSVs.git
-
+* Snakemake (https://snakemake.readthedocs.io/en/stable/)
+* ART version ART-MountRainer-2016-06-05 (https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm)
+* meryl version 1.3 (https://github.com/marbl/meryl)
+* Python with the pysam library (https://pysam.readthedocs.io/en/latest/)
 
 

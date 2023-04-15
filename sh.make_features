@@ -1,0 +1,22 @@
+#!/bin/bash
+#$ -e logs/
+#$ -o logs/
+#$ -l mem_free=6g,h_vmem=6g
+
+#source /etc/profile.d/modules.sh
+
+#module load snakemake
+#module load SAMtools/1.11-GCC-9.3.0
+
+# activate the conda environment for this script:
+source /home/nhansen/mambaforge/etc/profile.d/conda.sh
+conda activate mlgenotype
+
+export PATH=/home/nhansen/projects/ART/art_bin_MountRainier:/home/nhansen/projects/meryl/meryl-1.3/bin:$PATH
+
+export FOF=$1
+
+export TESTFILE=`cat $FOF | head -$SGE_TASK_ID | tail -1 | sed 's/.fastq/.testsample.features.txt/'`
+
+#echo $TESTFILE
+snakemake --nolock --cores=16 $TESTFILE
