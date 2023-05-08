@@ -1,4 +1,6 @@
-# Generating simulated and actual k-mer count-based features with mlgenofeatures
+# mlgenofeatures
+
+##Generating simulated and actual k-mer count-based features with mlgenofeatures
 
 The mlgenofeatures Snakemake workflow can be used to create files of
 k-mer counts from actual or simulated short read datasets from a diverse set of
