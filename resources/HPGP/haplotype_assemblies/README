@@ -1,0 +1,12 @@
+In order to run mlgenofeatures, this directory should contain
+assembled haplotypes in fasta files, to be used for simulating
+read data and calculating k-mer features from sequences with
+the various genotypes.
+
+To use HPGP haplotypes, download the fasta files from the links
+in the file assembled_hpgp_haplotype_urls.txt using the 
+command:
+
+> for url in `cat assembled_hpgp_haplotype_urls.txt`; do wget $url; done
+> for fasta in `ls HG*fa.gz`; do samtools faidx $fasta; done
+

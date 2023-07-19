@@ -1,0 +1,14 @@
+https://s3-us-west-2.amazonaws.com/human-pangenomics/working/HPRC_PLUS/HG01109/assemblies/year1_freeze_assembly_v2/HG01109.maternal.f1_assembly_v2.fa.gz
+https://s3-us-west-2.amazonaws.com/human-pangenomics/working/HPRC_PLUS/HG01109/assemblies/year1_freeze_assembly_v2/HG01109.paternal.f1_assembly_v2.fa.gz
+https://s3-us-west-2.amazonaws.com/human-pangenomics/working/HPRC_PLUS/HG01243/assemblies/year1_freeze_assembly_v2/HG01243.maternal.f1_assembly_v2.fa.gz
+https://s3-us-west-2.amazonaws.com/human-pangenomics/working/HPRC_PLUS/HG01243/assemblies/year1_freeze_assembly_v2/HG01243.paternal.f1_assembly_v2.fa.gz
+https://s3-us-west-2.amazonaws.com/human-pangenomics/working/HPRC_PLUS/HG02055/assemblies/year1_freeze_assembly_v2/HG02055.maternal.f1_assembly_v2.fa.gz
+https://s3-us-west-2.amazonaws.com/human-pangenomics/working/HPRC_PLUS/HG02055/assemblies/year1_freeze_assembly_v2/HG02055.paternal.f1_assembly_v2.fa.gz
+https://s3-us-west-2.amazonaws.com/human-pangenomics/working/HPRC_PLUS/HG02145/assemblies/year1_freeze_assembly_v2/HG02145.maternal.f1_assembly_v2.fa.gz
+https://s3-us-west-2.amazonaws.com/human-pangenomics/working/HPRC_PLUS/HG02145/assemblies/year1_freeze_assembly_v2/HG02145.paternal.f1_assembly_v2.fa.gz
+https://s3-us-west-2.amazonaws.com/human-pangenomics/working/HPRC_PLUS/HG02723/assemblies/year1_freeze_assembly_v2/HG02723.maternal.f1_assembly_v2.fa.gz
+https://s3-us-west-2.amazonaws.com/human-pangenomics/working/HPRC_PLUS/HG02723/assemblies/year1_freeze_assembly_v2/HG02723.paternal.f1_assembly_v2.fa.gz
+https://s3-us-west-2.amazonaws.com/human-pangenomics/working/HPRC_PLUS/HG03098/assemblies/year1_freeze_assembly_v2/HG03098.maternal.f1_assembly_v2.fa.gz
+https://s3-us-west-2.amazonaws.com/human-pangenomics/working/HPRC_PLUS/HG03098/assemblies/year1_freeze_assembly_v2/HG03098.paternal.f1_assembly_v2.fa.gz
+https://s3-us-west-2.amazonaws.com/human-pangenomics/working/HPRC_PLUS/HG03492/assemblies/year1_freeze_assembly_v2/HG03492.maternal.f1_assembly_v2.fa.gz
+https://s3-us-west-2.amazonaws.com/human-pangenomics/working/HPRC_PLUS/HG03492/assemblies/year1_freeze_assembly_v2/HG03492.paternal.f1_assembly_v2.fa.gz
