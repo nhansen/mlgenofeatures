@@ -5,8 +5,19 @@ the various genotypes.
 
 To use HPGP haplotypes, download the fasta files from the links
 in the file assembled_hpgp_haplotype_urls.txt using the 
-command:
+commands:
 
-> for url in `cat assembled_hpgp_haplotype_urls.txt`; do wget $url; done
-> for fasta in `ls HG*fa.gz`; do samtools faidx $fasta; done
+# download fastas:
+for url in `cat assembled_hpgp_haplotype_urls.txt`; do
+    wget $url;
+done
 
+# bgzip compress and index:
+for fasta in `ls HG*fa.gz`; do
+    gunzip -c $fasta | bgzip -c > $fasta.bgzip
+    mv $fasta.bgzip $fasta
+    samtools faidx $fasta;
+done
+
+Once they are properly compressed and indexed, these files can
+be used as base haplotypes for the mlgenofeatures pipeline.
