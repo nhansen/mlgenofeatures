@@ -8,12 +8,12 @@ coveragevals:
     - 40
     - 50
     - 60
-targetkmers: ../meryldb/alphathal_region_allthreerefs_max30inhg19andGRCh38andchm13_k25
+targetkmers: resources/meryldb/alphathal_region_allthreerefs_max30inhg19andGRCh38andchm13_k25
 fivepgenomeregionbuffer: 200000
 threepgenomeregionbuffer: 450000
 prunefactor: 30
 iterations: 10
-genomedir: ../HPGP/haplotype_assemblies
+genomedir: resources/HPGP/haplotype_assemblies
 genomefiles:
     1M: HG01109.maternal.f1_assembly_v2.fa.gz
     1P: HG01109.paternal.f1_assembly_v2.fa.gz
@@ -29,7 +29,7 @@ genomefiles:
     6P: HG03098.paternal.f1_assembly_v2.fa.gz
     7M: HG03492.maternal.f1_assembly_v2.fa.gz
     7P: HG03492.paternal.f1_assembly_v2.fa.gz
-mutationdir: ../HPGP/mutation_locations
+mutationdir: resources/HPGP/mutation_locations
 mutationfiles:
     1M: HG01109.maternal.f1_assembly_v2.AlphaThal.mutations.bed
     1P: HG01109.paternal.f1_assembly_v2.AlphaThal.mutations.bed
